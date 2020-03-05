@@ -13,14 +13,20 @@ type ExperimentList struct {
 */
 type ExperimentListItem struct {
 	Name string `json:"name"`
+	ResourceVersion string `json:"resourceVersion"`
 	Phase string `json:"phase"`
 	CreatedAt string `json:"createdAt"`
+	StartedAT string `json:"startedAt"`
+	EndedAt string `json:"endedAt"`
 	Status string `json:"status"`
 	Baseline string `json:"baseline"`
 	BaselinePercentage int `json:"baselinePercentage"`
 	Candidate string `json:"candidate"`
 	CandidatePercentage int `json:"candidatePercentage"`
 	Namespace string `json:"namespace"`
+	TargetService string `json:"targetService"`
+	TargetServiceNamespace string `json:"targetServiceNamespace"`
+	AssessmentConclusion string `json:"assessmentConclusion"`
 }
 type ExperimentDetail struct {
 	ExperimentItem ExperimentListItem `json:"experimentItem"`

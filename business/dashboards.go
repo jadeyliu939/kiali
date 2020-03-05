@@ -236,3 +236,123 @@ func (in *DashboardsService) GetCustomDashboardRefs(namespace, app, version stri
 	}
 	return runtimes
 }
+
+var iter8Charts = []istioChart{
+	{
+		Chart: kmodel.Chart{
+			Name:  "Request volume",
+			Unit:  "ops",
+			Spans: 12,
+		},
+		refName: "request_count",
+	},
+	// TODO: Istio is transitioning from duration in seconds to duration in ms (a new metric). When
+	//       complete we should reduce the next two entries to just one entry.
+	{
+		Chart: kmodel.Chart{
+			Name:  "Request duration",
+			Unit:  "seconds",
+			Spans: 6,
+		},
+		refName: "request_duration",
+	},
+	{
+		Chart: kmodel.Chart{
+			Name:  "Request duration",
+			Unit:  "seconds",
+			Spans: 6,
+		},
+		refName: "request_duration_millis",
+		scale:   0.001,
+	},
+	{
+		Chart: kmodel.Chart{
+			Name:  "Request size",
+			Unit:  "bytes",
+			Spans: 6,
+		},
+		refName: "request_size",
+	},
+	{
+		Chart: kmodel.Chart{
+			Name:  "Response size",
+			Unit:  "bytes",
+			Spans: 6,
+		},
+		refName: "response_size",
+	},
+	{
+		Chart: kmodel.Chart{
+			Name:  "TCP received",
+			Unit:  "bitrate",
+			Spans: 6,
+		},
+		refName: "tcp_received",
+	},
+	{
+		Chart: kmodel.Chart{
+			Name:  "TCP sent",
+			Unit:  "bitrate",
+			Spans: 6,
+		},
+		refName: "tcp_sent",
+	},
+}
+
+func (in *DashboardsService) GetIter8Dashboard(params prometheus.IstioMetricsQuery, idx int) (*kmodel.MonitoringDashboard, error) {
+	var dashboard kmodel.MonitoringDashboard
+	// Copy dashboard
+	if params.Direction == "inbound" {
+		dashboard = models.PrepareIstioDashboard("Inbound", "destination", "source")
+	} else {
+		dashboard = models.PrepareIstioDashboard("Outbound", "source", "destination")
+	}
+
+	metrics := in.prom.GetMetrics(&params)
+
+	// TODO: remove this hacky code when Istio finishes migrating to the millis duration metric,
+	//       until then use the one that has data, preferring millis in the corner case that
+	//       both have data for the time range.
+	_, secondsOK := metrics.Histograms["request_duration"]
+	durationMillis, millisOK := metrics.Histograms["request_duration_millis"]
+	if secondsOK && millisOK {
+		durationMillisEmpty := true
+	MillisEmpty:
+		for _, samples := range durationMillis {
+			for _, sample := range samples.Matrix {
+				for _, pair := range sample.Values {
+					if !math.IsNaN(float64(pair.Value)) {
+						durationMillisEmpty = false
+						break MillisEmpty
+					}
+				}
+			}
+		}
+		if !durationMillisEmpty {
+			delete(metrics.Histograms, "request_duration")
+		} else {
+			delete(metrics.Histograms, "request_duration_millis")
+		}
+	}
+	chartTpl := iter8Charts[idx]
+	// for _, chartTpl := range istioCharts {
+		newChart := chartTpl.Chart
+		unitScale := 1.0
+		if chartTpl.scale != 0.0 {
+			unitScale = chartTpl.scale
+		}
+		if metric, ok := metrics.Metrics[chartTpl.refName]; ok {
+			newChart.Metric = kmodel.ConvertMatrix(metric.Matrix, unitScale)
+		}
+		if histo, ok := metrics.Histograms[chartTpl.refName]; ok {
+			newChart.Histogram = make(map[string][]*kmodel.SampleStream, len(histo))
+			for k, v := range histo {
+				newChart.Histogram[k] = kmodel.ConvertMatrix(v.Matrix, unitScale)
+			}
+		}
+		if newChart.Metric != nil || newChart.Histogram != nil {
+			dashboard.Charts = append(dashboard.Charts, newChart)
+		}
+	// }
+	return &dashboard, nil
+}

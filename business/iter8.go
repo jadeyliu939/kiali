@@ -8,6 +8,8 @@ import (
 	kube "k8s.io/client-go/kubernetes"
 	"github.com/kiali/kiali/config"
 	"k8s.io/client-go/rest"
+	"strconv"
+	"strings"
 	"time"
 	"fmt"
 	"github.com/kiali/kiali/log"
@@ -100,14 +102,36 @@ func (in *Iter8Service) GetIter8Experiment(namespace string, name string) (exper
     	MaxTrafficPercentage: result.Spec.TrafficControl.GetMaxTrafficPercentage(),
     	TrafficStepSize: result.Spec.TrafficControl.GetStepSize(),
     }
+
+    startTime, _:= strconv.ParseInt(result.Status.StartTimestamp,10, 64)
+	startTimeInNanoSecond :=  startTime*int64(1000000)
+	endTime  := ""
+	if  result.Status.EndTimestamp != "" {
+		_endTime, _:= strconv.ParseInt(result.Status.EndTimestamp,10, 64)
+		endTimeInNano :=  _endTime*int64(1000000)
+		endTime = time.Unix(0, endTimeInNano ).Format(time.RFC1123)
+	}
+	targetServiceNamespace := result.Spec.TargetService.Namespace
+	if targetServiceNamespace == "" {
+		targetServiceNamespace = namespace
+	}
 	return models.ExperimentDetail{
 		ExperimentItem : models.ExperimentListItem {
 			Name: result.Name,
+			Namespace: namespace,
+			ResourceVersion: result.GetResourceVersion(),
+			Phase: string(result.Status.Phase),
 			Status: result.Status.Message,
+			CreatedAt: result.CreationTimestamp.Format(time.RFC1123),
+			StartedAT: time.Unix(0, startTimeInNanoSecond ).Format(time.RFC1123),
+			EndedAt: endTime,
 			Baseline: result.Spec.TargetService.Baseline,
 			BaselinePercentage: result.Status.TrafficSplit.Baseline,
 			Candidate: result.Spec.TargetService.Candidate,
 			CandidatePercentage: result.Status.TrafficSplit.Candidate,
+			TargetService: result.Spec.TargetService.Name,
+			TargetServiceNamespace: targetServiceNamespace,
+			AssessmentConclusion:  strings.Join(result.Status.AssessmentSummary.Conclusions, ";"),
 		},
 		CriteriaDetails: criterias,
 		TrafficControl: trafficControl,
@@ -191,6 +215,7 @@ func getExperimentsByNamespace(namespace string) (experiment []models.Experiment
 			Candidate: item.Spec.TargetService.Candidate,
 			CandidatePercentage: item.Status.TrafficSplit.Candidate,
 			Namespace: namespace,
+			TargetService: item.Spec.TargetService.Name,
 		})
 	}
 	return experiments, nil
@@ -277,3 +302,4 @@ func (in *Iter8Service) Iter8ExperimentCreate(body []byte) ( *iter8v1alpha1.Expe
 func formatTime(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
 }
+
