@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kiali/kiali/models"
+	"github.com/kiali/kiali/prometheus"
+
 )
 
 func Iter8Status(w http.ResponseWriter, r *http.Request) {
@@ -104,4 +106,37 @@ func Iter8ExperimentDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, experiment)
+}
+
+
+func Iter8Dashboard(w http.ResponseWriter, r *http.Request) {
+	business, err := getBusiness(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, "Services initialization error: "+err.Error())
+		return
+	}
+
+	vars := mux.Vars(r)
+	namespace := vars["namespace"]
+	service := vars["service"]
+
+	prom, namespaceInfo := initClientsForMetrics(w, r, defaultPromClientSupplier, namespace)
+	if prom == nil {
+		// any returned value nil means error & response already written
+		return
+	}
+
+	params := prometheus.IstioMetricsQuery{Namespace: namespace, Service: service}
+	err = extractIstioMetricsQueryParams(r, &params, namespaceInfo)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	dashboard, err := business.Iter8.GetIter8Dashboard(  r.URL.Query(), vars, namespace, service, prom, params)
+	if err != nil {
+		handleErrorResponse(w, err)
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, dashboard)
 }

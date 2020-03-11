@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/kiali/kiali/kubernetes"
+
+	kchartmodel "github.com/kiali/k-charted/model"
+
 )
 
 type Iter8Info struct {
@@ -74,6 +77,13 @@ type Iter8Criteria struct {
 	Tolerance     float64 `json:"tolerance"`
 	SampleSize    int     `json:"sampleSize"`
 	StopOnFailure bool    `json:"stopOnFailure"`
+}
+
+
+type Iter8Chart struct {
+	kchartmodel.Chart
+	RefName string
+	Scale   float64
 }
 
 func (i *Iter8ExperimentDetail) Parse(iter8Object kubernetes.Iter8Experiment) {

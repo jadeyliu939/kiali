@@ -1422,6 +1422,27 @@ func NewRoutes() (r *Routes) {
 			HandlerFunc:   handlers.Iter8ExperimentDelete,
 			Authenticated: true,
 		},
+		// swagger:route GET /namespaces/{namespace}/experiments/{service}/ashboard services iter8Dashboard
+		// ---
+		// Endpoint to fetch dashboard to be displayed, related to a single service of an experiment
+		//
+		//     Produces:
+		//     - application/json
+		//
+		//     Schemes: http, https
+		//
+		// responses:
+		//      400: badRequestError
+		//      503: serviceUnavailableError
+		//      200: dashboardResponse
+		//
+		{
+			"Iter8Dashboard",
+			"GET",
+			"/api/iter8/namespaces/{namespace}/experiments/{service}/dashboard",
+			handlers.Iter8Dashboard,
+			true,
+		},
 	}
 
 	return
