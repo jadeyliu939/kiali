@@ -1306,6 +1306,122 @@ func NewRoutes() (r *Routes) {
 			handlers.ThreeScaleServiceRuleDelete,
 			true,
 		},
+		// swagger:route GET /iter8
+		// ---
+		// Endpoint to check if threescale adapter is present in the cluster and if user can write adapter config
+		//
+		//		Produces:
+		//		- application/json
+		//
+		//		Schemes: http, https
+		//
+		// responses:
+		//		500: internalError
+		//		200: iter8StatusResponse
+		{
+			"Iter8Info",
+			"GET",
+			"/api/iter8",
+			handlers.Iter8Status,
+			true,
+		},
+		// swagger:route GET /iter8/namespaces/{namespace}/experiments/{name} getIter8Experiments
+		// ---
+		// Endpoint to fetch iter8 experiments by namespace and name
+		//
+		// 		Produces:
+		//		- application/json
+		//
+		//		Schemes: http, https
+		//
+		// responses:
+		//		500: internalError
+		//		200: iter8ExperimentGetDetailResponse
+		{
+			"Iter8ExperimentsByNamespaceAndName",
+			"GET",
+			"/api/iter8/namespaces/{namespace}/experiments/{name}",
+			handlers.Iter8ExperimentGet,
+			true,
+		},
+		// swagger:route GET /iter8/experiments
+		// ---
+		// Endpoint to fetch iter8 experiments for all namespaces user have access.
+		// User can define a comman separated list of namespaces.
+		//
+		// 		Produces:
+		//		- application/json
+		//
+		//		Schemes: http, https
+		//
+		// responses:
+		//		500: internalError
+		//		200: iter8GetExperimentsResponse
+		{
+			"Iter8Experiments",
+			"GET",
+			"/api/iter8/experiments",
+			handlers.Iter8Experiments,
+			true,
+		},
+
+		// swagger:route POST /iter8/namespaces/{namespace}/experiments postIter8Experiments
+		// ---
+		// Endpoint to create new iter8 experiments for a given namespace.
+		//
+		// 		Produces:
+		//		- application/json
+		//
+		//		Schemes: http, https
+		//
+		// responses:
+		//		500: internalError
+		//		200: iter8ExperimentsGetResponse
+		{
+			Name:          "Iter8ExperimentCreate",
+			Method:        "POST",
+			Pattern:       "/api/iter8/namespaces/{namespace}/experiments",
+			HandlerFunc:   handlers.Iter8ExperimentCreate,
+			Authenticated: true,
+		},
+		// swagger:route PATCH /iter8/experiments/{namespace}/name/{name} patchIter8Experiments
+		// ---
+		// Endpoint to update new iter8 experiment (for abort purpose)
+		//
+		// 		Produces:
+		//		- application/json
+		//
+		//		Schemes: http, https
+		//
+		// responses:
+		//		500: internalError
+		//		200: iter8ExperimentGetDetailResponse
+		{
+			Name:          "Iter8ExperimentsUpdate",
+			Method:        "PATCH",
+			Pattern:       "/api/iter8/experiments/namespaces/{namespace}/name/{name}",
+			HandlerFunc:   handlers.Iter8ExperimentUpdate,
+			Authenticated: true,
+		},
+		// swagger:route DELETE /iter8/experiments/namespaces/{namespace}/name/{name} deleteIter8Experiments
+		// ---
+		// Endpoint to delete   iter8 experiments
+		//
+		// 		Produces:
+		//		- application/json
+		//
+		//		Schemes: http, https
+		//
+		// responses:
+		//		500: internalError
+		//		200
+		{
+			Name:          "Iter8ExperimentDelete",
+			Method:        "DELETE",
+			Pattern:       "/api/iter8/experiments/namespaces/{namespace}/name/{name}",
+			HandlerFunc:   handlers.Iter8ExperimentDelete,
+			Authenticated: true,
+		},
 	}
 
 	return
