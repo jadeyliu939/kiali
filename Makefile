@@ -32,7 +32,7 @@ GOFMT ?= $(shell ${GO} env GOROOT)/bin/gofmt
 GO_VERSION_KIALI = 1.14
 
 # Identifies the Kiali container image that will be built.
-IMAGE_ORG ?= kiali
+IMAGE_ORG ?= jadeyliu939
 CONTAINER_NAME ?= ${IMAGE_ORG}/kiali
 CONTAINER_VERSION ?= dev
 

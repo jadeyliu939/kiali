@@ -38,6 +38,26 @@ func extractIstioMetricsQueryParams(r *http.Request, q *prometheus.IstioMetricsQ
 		}
 		q.Reporter = reporter
 	}
+	log.Infof("Checking parameters %s, %s", queryParams.Get("startTime"), queryParams.Get("endTime"))
+	if (queryParams.Get("endTime") != "" ) {
+		startTime, err := strconv.ParseInt(queryParams.Get("startTime"), 10, 64)
+		log.Infof("strconv return %s", err)
+		if err == nil {
+			endTime, err := strconv.ParseInt(queryParams.Get("endTime"), 10, 64)
+			log.Infof("strconv return %s", err)
+			if err == nil {
+				q.Start = time.Unix(startTime/int64(1000), 0)
+
+				q.End = time.Unix(endTime/int64(1000), 0)
+				log.Infof("Setting starttime and endTIme %s %s",q.Start.Format(time.RFC3339), q.End.Format(time.RFC3339))
+
+			}
+
+		}
+	}
+
+
+
 	return extractBaseMetricsQueryParams(queryParams, &q.BaseMetricsQuery, namespaceInfo)
 }
 
@@ -125,5 +145,7 @@ func extractBaseMetricsQueryParams(queryParams url.Values, q *prometheus.BaseMet
 	// Adjust start & end times to be a multiple of step
 	stepInSecs := int64(q.Step.Seconds())
 	q.Start = time.Unix((q.Start.Unix()/stepInSecs)*stepInSecs, 0)
+	log.Infof("Setting starttime and endTIme %s %s",q.Start.Format(time.RFC3339), q.End.Format(time.RFC3339))
+
 	return nil
 }
